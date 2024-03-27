@@ -3,7 +3,7 @@
   "displayName": "Restore Terminals",
   "description": "Spawn integrated terminals and run commands on startup",
   "version": "1.1.9",
-  "publisher": "Eyalhl, based on EthanSK's project",
+  "publisher": "Eyalhl",
   "icon": "icon.png",
   "repository": {
     "type": "git",
