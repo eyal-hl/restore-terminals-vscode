@@ -1,3 +1,7 @@
+# Forked from https://github.com/EthanSK/restore-terminals-vscode
+
+Allows to have multiple presets of terminals
+
 # Restore Terminals
 
 Automatically spawn integrated terminal windows and split terminals, and run any shell commands when VSCode starts up!
