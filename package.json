@@ -7,7 +7,7 @@
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/eyal-hl/restore-terminals-vscode"
+    "url": "https://github.com/eyal-hl/restore-terminals-vscode/tree/new-ext"
   },
   "engines": {
     "vscode": "^1.46.0"
