@@ -106,7 +106,7 @@ export default async function restoreTerminals(configuration: Configuration) {
       await delay(artificialDelayMilliseconds ?? DEFAULT_ARTIFICAL_DELAY);
     }
 
-    if(terminalWindow.setAsActive && !activeWindow){
+    if (terminalWindow.setAsActive && !activeWindow) {
       activeWindow = term;
     }
   }
@@ -118,10 +118,9 @@ export default async function restoreTerminals(configuration: Configuration) {
 
   //for some reason running a command in the terminal makes it be shown again so this
   //needs to be ran after all the commands are executed
-  if(activeWindow){
+  if (activeWindow) {
     activeWindow.show();
   }
-
 }
 
 async function runCommands(
