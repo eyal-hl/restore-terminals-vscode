@@ -1,6 +1,9 @@
 # Forked from https://github.com/EthanSK/restore-terminals-vscode
 
-Allows to have multiple presets of terminals
+Added features:
+
+- Allows to have multiple presets of terminals
+- Allows to set active window [credit to Gharsnull](https://github.com/Gharsnull/restore-terminals-vscode/tree/feature/select-active-window)
 
 # Restore Terminals
 
@@ -13,6 +16,7 @@ Simply configure your VSCode settings JSON file to look something like this:
 ```
  "restoreTerminals.terminals": [
     {
+      "setAsActive": true,
       "splitTerminals": [
         {
           "name": "server",
@@ -50,6 +54,7 @@ Or named configurations that you can choose between:
  "restoreTerminals.terminals": {
     "dev": [
       {
+        "setAsActive": true,
         "splitTerminals": [
           {
             "name": "server",

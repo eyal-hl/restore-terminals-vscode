@@ -1,8 +1,8 @@
 {
   "name": "restore-terminals-with-presets",
   "displayName": "Restore Terminals with presets",
-  "description": "Spawn integrated terminals and run commands on startup",
-  "version": "1.1.9",
+  "description": "EthanSK's Restore terminal with some added features",
+  "version": "1.1.10",
   "publisher": "Eyalhl",
   "icon": "icon.png",
   "repository": {
@@ -60,6 +60,10 @@
                 "type": "array",
                 "items": {
                   "properties": {
+                    "setAsActive": {
+                      "type": "boolean",
+                      "description": "Whether to set this terminal as the active one after opening it."
+                    },
                     "splitTerminals": {
                       "type": "array",
                       "items": {
@@ -99,6 +103,10 @@
               "type": "array",
               "items": {
                 "properties": {
+                  "setAsActive": {
+                    "type": "boolean",
+                    "description": "Whether to set this terminal as the active one after opening it."
+                  },
                   "splitTerminals": {
                     "type": "array",
                     "items": {
