@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { delay } from "./utils";
-import { Configuration, TerminalConfig, TerminalWindow } from "./model";
+import { Configuration, TerminalWindow } from "./model";
 
 const DEFAULT_ARTIFICAL_DELAY = 300;
 const SPLIT_TERM_CHECK_DELAY = 100;
@@ -64,6 +64,20 @@ export default async function restoreTerminals(configuration: Configuration) {
     terminal: vscode.Terminal;
   }[] = [];
   //create the terminals sequentially so theres no glitches, but run the commands in parallel
+  if (
+    terminalWindows.some(
+      (terminalWindow) => terminalWindow.defaultSelected != null
+    )
+  ) {
+    const enumartedTerminalWindows: Map<number, TerminalWindow> = new Map(
+      terminalWindows.map((terminalWindow, index) => [index, terminalWindow])
+    );
+
+    terminalWindows = (await promptForCheckboxes(enumartedTerminalWindows)).map(
+      (index) => enumartedTerminalWindows.get(index) as TerminalWindow
+    );
+  }
+
   for (const terminalWindow of terminalWindows) {
     if (!terminalWindow.splitTerminals) {
       // vscode.window.showInformationMessage("No split terminal configuration provided to restore terminals with.") //this might be annoying
@@ -163,5 +177,51 @@ async function createNewSplitTerminal(
         attemptCount++;
       }
     }
+  });
+}
+
+function promptForCheckboxes(
+  terminalWindows: Map<number, TerminalWindow>
+): Promise<number[]> {
+  const quickPick = vscode.window.createQuickPick();
+  quickPick.canSelectMany = true;
+
+  // Define the options for the user to select from
+  quickPick.items = Array.from(terminalWindows.entries()).map(
+    ([index, window]) => ({
+      label:
+        `${index.toString()}. ` +
+        (window.splitTerminals
+          ? window.splitTerminals[0].name ?? "unnamed"
+          : "empty"),
+      description: window.splitTerminals
+        ? window.splitTerminals[0].commands?.join(", ") || "No commands"
+        : "No config",
+    })
+  );
+
+  quickPick.selectedItems = quickPick.items.filter(
+    (item) =>
+      terminalWindows.get(Number(item.label.split(".")[0]))?.defaultSelected
+  );
+
+  // Placeholder text
+  quickPick.placeholder = "Choose options (check to select)";
+
+  // When the quick pick is closed without accepting
+  quickPick.onDidHide(() => {
+    quickPick.dispose();
+  });
+
+  // Show the quick pick interface
+  quickPick.show();
+  return new Promise((resolve) => {
+    quickPick.onDidAccept(() => {
+      const selectedIndices = quickPick.selectedItems.map((item) =>
+        Number(item.label.split(".")[0])
+      );
+      resolve(selectedIndices);
+      quickPick.hide();
+    });
   });
 }

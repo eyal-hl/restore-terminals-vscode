@@ -3,6 +3,7 @@
 Added features:
 
 - Allows to have multiple presets of terminals
+- Allows to prompt for checkbox to run only spesific terminals
 - Allows to set active window [credit to Gharsnull](https://github.com/Gharsnull/restore-terminals-vscode/tree/feature/select-active-window)
 
 # Restore Terminals
@@ -17,6 +18,7 @@ Simply configure your VSCode settings JSON file to look something like this:
  "restoreTerminals.terminals": [
     {
       "setAsActive": true,
+      "defaultSelected": true,
       "splitTerminals": [
         {
           "name": "server",
