@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { delay } from "./utils";
-import { Configuration, TerminalWindow } from "./model";
+import { Configuration, Preset, TerminalWindow, isPresetObject } from "./model";
 
 const DEFAULT_ARTIFICAL_DELAY = 300;
 const SPLIT_TERM_CHECK_DELAY = 100;
@@ -21,7 +21,10 @@ export default async function restoreTerminals(configuration: Configuration) {
   }
 
   if (!(terminalWindows instanceof Array) && terminalWindows !== null) {
-    terminalWindows = new Map(Object.entries(terminalWindows));
+    terminalWindows = new Map(Object.entries(terminalWindows)) as Map<
+      string,
+      TerminalWindow[] | Preset
+    >;
     if (!terminalWindows.size) {
       vscode.window.showInformationMessage(
         "Empty terminal window configuration provided to restore terminals with."
@@ -29,6 +32,7 @@ export default async function restoreTerminals(configuration: Configuration) {
       return;
     }
 
+    let selectedPreset: TerminalWindow[] | Preset | undefined;
     if (terminalWindows.size > 1) {
       const picked = await vscode.window.showQuickPick(
         Array.from(terminalWindows.keys())
@@ -36,9 +40,22 @@ export default async function restoreTerminals(configuration: Configuration) {
       if (!picked) {
         return;
       }
-      terminalWindows = terminalWindows.get(picked) ?? [];
+      selectedPreset = terminalWindows.get(picked);
     } else {
-      terminalWindows = Array.from(terminalWindows.values())[0];
+      selectedPreset = Array.from(terminalWindows.values())[0];
+    }
+
+    // Handle both legacy array format and new Preset object format
+    if (selectedPreset && isPresetObject(selectedPreset)) {
+      // New format: preset is an object with optional keepExistingTerminalsOpen
+      // Preset-level setting overrides global setting
+      if (selectedPreset.keepExistingTerminalsOpen !== undefined) {
+        keepExistingTerminalsOpen = selectedPreset.keepExistingTerminalsOpen;
+      }
+      terminalWindows = selectedPreset.terminals;
+    } else {
+      // Legacy format: preset is just an array of TerminalWindow
+      terminalWindows = selectedPreset ?? [];
     }
   }
 
@@ -49,21 +66,7 @@ export default async function restoreTerminals(configuration: Configuration) {
     return;
   }
 
-  if (vscode.window.activeTerminal && !keepExistingTerminalsOpen) {
-    vscode.window.terminals.forEach((terminal) => {
-      //i think calling terminal.dispose before creating the new termials causes error because the terminal has disappeard and it fux up. we can do it after, and check that the terminal we are deleting is not in the list of terminals we just created
-      console.log(`Disposing terminal ${terminal.name}`);
-      terminal.dispose();
-    });
-  }
-  await delay(artificialDelayMilliseconds ?? DEFAULT_ARTIFICAL_DELAY); //without delay it starts bugging out
-
-  let commandsToRunInTerms: {
-    commands: string[];
-    shouldRunCommands: boolean;
-    terminal: vscode.Terminal;
-  }[] = [];
-  //create the terminals sequentially so theres no glitches, but run the commands in parallel
+  // Handle checkbox selection FIRST (before disposal)
   if (
     terminalWindows.some(
       (terminalWindow) => terminalWindow.defaultSelected != null
@@ -77,6 +80,42 @@ export default async function restoreTerminals(configuration: Configuration) {
       (index) => enumartedTerminalWindows.get(index) as TerminalWindow
     );
   }
+
+  // Collect terminal names from the SELECTED terminals (after checkbox filtering)
+  const terminalNamesToCreate = new Set<string>();
+  for (const terminalWindow of terminalWindows) {
+    if (terminalWindow.splitTerminals) {
+      for (const splitTerminal of terminalWindow.splitTerminals) {
+        if (splitTerminal.name) {
+          terminalNamesToCreate.add(splitTerminal.name);
+        }
+      }
+    }
+  }
+
+  if (!keepExistingTerminalsOpen) {
+    // Close all existing terminals
+    vscode.window.terminals.forEach((terminal) => {
+      console.log(`Disposing terminal ${terminal.name}`);
+      terminal.dispose();
+    });
+  } else {
+    // keepExistingTerminalsOpen is true - only close terminals with same names as new ones
+    // This ensures we don't have duplicate terminal names
+    vscode.window.terminals.forEach((terminal) => {
+      if (terminalNamesToCreate.has(terminal.name)) {
+        console.log(`Disposing terminal with duplicate name: ${terminal.name}`);
+        terminal.dispose();
+      }
+    });
+  }
+  await delay(artificialDelayMilliseconds ?? DEFAULT_ARTIFICAL_DELAY); //without delay it starts bugging out
+
+  let commandsToRunInTerms: {
+    commands: string[];
+    shouldRunCommands: boolean;
+    terminal: vscode.Terminal;
+  }[] = [];
 
   for (const terminalWindow of terminalWindows) {
     if (!terminalWindow.splitTerminals) {
@@ -183,45 +222,53 @@ async function createNewSplitTerminal(
 function promptForCheckboxes(
   terminalWindows: Map<number, TerminalWindow>
 ): Promise<number[]> {
-  const quickPick = vscode.window.createQuickPick();
-  quickPick.canSelectMany = true;
-
-  // Define the options for the user to select from
-  quickPick.items = Array.from(terminalWindows.entries()).map(
-    ([index, window]) => ({
-      label:
-        `${index.toString()}. ` +
-        (window.splitTerminals
-          ? window.splitTerminals[0].name ?? "unnamed"
-          : "empty"),
-      description: window.splitTerminals
-        ? window.splitTerminals[0].commands?.join(", ") || "No commands"
-        : "No config",
-    })
-  );
-
-  quickPick.selectedItems = quickPick.items.filter(
-    (item) =>
-      terminalWindows.get(Number(item.label.split(".")[0]))?.defaultSelected
-  );
-
-  // Placeholder text
-  quickPick.placeholder = "Choose options (check to select)";
-
-  // When the quick pick is closed without accepting
-  quickPick.onDidHide(() => {
-    quickPick.dispose();
-  });
-
-  // Show the quick pick interface
-  quickPick.show();
   return new Promise((resolve) => {
+    const quickPick = vscode.window.createQuickPick();
+    quickPick.canSelectMany = true;
+
+    // Define the options for the user to select from
+    quickPick.items = Array.from(terminalWindows.entries()).map(
+      ([index, window]) => ({
+        label:
+          `${index.toString()}. ` +
+          (window.splitTerminals
+            ? window.splitTerminals[0].name ?? "unnamed"
+            : "empty"),
+        description: window.splitTerminals
+          ? window.splitTerminals[0].commands?.join(", ") || "No commands"
+          : "No config",
+      })
+    );
+
+    quickPick.selectedItems = quickPick.items.filter(
+      (item) =>
+        terminalWindows.get(Number(item.label.split(".")[0]))?.defaultSelected
+    );
+
+    // Placeholder text
+    quickPick.placeholder = "Choose options (check to select)";
+
+    let accepted = false;
+
     quickPick.onDidAccept(() => {
+      accepted = true;
       const selectedIndices = quickPick.selectedItems.map((item) =>
         Number(item.label.split(".")[0])
       );
       resolve(selectedIndices);
       quickPick.hide();
     });
+
+    // When the quick pick is closed without accepting (e.g. Escape)
+    quickPick.onDidHide(() => {
+      quickPick.dispose();
+      if (!accepted) {
+        // User cancelled - resolve with empty array
+        resolve([]);
+      }
+    });
+
+    // Show the quick pick interface
+    quickPick.show();
   });
 }

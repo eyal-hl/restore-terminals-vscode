@@ -56,51 +56,118 @@
           "oneOf": [
             {
               "type": "object",
+              "description": "Named presets - each preset can be an array of terminals or an object with keepExistingTerminalsOpen and terminals",
               "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "properties": {
-                    "setAsActive": {
-                      "type": "boolean",
-                      "description": "Whether to set this terminal as the active one after opening it."
-                    },
-                    "defaultSelected": {
-                      "type": "boolean",
-                      "description": "If exists on at least one terminal you will be able to choose if which terminals to run and which not, If its true it will be selected by default"
-                    },
-                    "splitTerminals": {
-                      "type": "array",
-                      "items": {
-                        "properties": {
-                          "name": {
-                            "type": "string",
-                            "description": "The name to give the terminal window"
-                          },
-                          "icon": {
-                            "type": "string",
-                            "description": "The icon to give the terminal window"
-                          },
-                          "commands": {
-                            "type": "array",
-                            "description": "The shell commands to execute when this terminal opens.",
-                            "items": {
-                              "properties": {
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "description": "Legacy format: array of terminal windows",
+                    "items": {
+                      "properties": {
+                        "setAsActive": {
+                          "type": "boolean",
+                          "description": "Whether to set this terminal as the active one after opening it."
+                        },
+                        "defaultSelected": {
+                          "type": "boolean",
+                          "description": "If exists on at least one terminal you will be able to choose if which terminals to run and which not, If its true it will be selected by default"
+                        },
+                        "splitTerminals": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "name": {
                                 "type": "string",
-                                "description": "A shell command to run."
+                                "description": "The name to give the terminal window"
+                              },
+                              "icon": {
+                                "type": "string",
+                                "description": "The icon to give the terminal window"
+                              },
+                              "commands": {
+                                "type": "array",
+                                "description": "The shell commands to execute when this terminal opens.",
+                                "items": {
+                                  "properties": {
+                                    "type": "string",
+                                    "description": "A shell command to run."
+                                  }
+                                }
+                              },
+                              "shouldRunCommands": {
+                                "type": "boolean",
+                                "description": "Whether to actually run the commands in the terminal, or just paste them there."
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "description": "Preset object with optional per-preset settings",
+                    "properties": {
+                      "keepExistingTerminalsOpen": {
+                        "type": "boolean",
+                        "description": "Whether or not to keep any currently open terminals open when restoring this preset. Overrides the global setting."
+                      },
+                      "terminals": {
+                        "type": "array",
+                        "description": "Array of terminal windows for this preset",
+                        "items": {
+                          "properties": {
+                            "setAsActive": {
+                              "type": "boolean",
+                              "description": "Whether to set this terminal as the active one after opening it."
+                            },
+                            "defaultSelected": {
+                              "type": "boolean",
+                              "description": "If exists on at least one terminal you will be able to choose if which terminals to run and which not, If its true it will be selected by default"
+                            },
+                            "splitTerminals": {
+                              "type": "array",
+                              "items": {
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "description": "The name to give the terminal window"
+                                  },
+                                  "icon": {
+                                    "type": "string",
+                                    "description": "The icon to give the terminal window"
+                                  },
+                                  "commands": {
+                                    "type": "array",
+                                    "description": "The shell commands to execute when this terminal opens.",
+                                    "items": {
+                                      "properties": {
+                                        "type": "string",
+                                        "description": "A shell command to run."
+                                      }
+                                    }
+                                  },
+                                  "shouldRunCommands": {
+                                    "type": "boolean",
+                                    "description": "Whether to actually run the commands in the terminal, or just paste them there."
+                                  }
+                                },
+                                "additionalProperties": false
                               }
                             }
                           },
-                          "shouldRunCommands": {
-                            "type": "boolean",
-                            "description": "Whether to actually run the commands in the terminal, or just paste them there."
-                          }
-                        },
-                        "additionalProperties": false
+                          "additionalProperties": false
+                        }
                       }
-                    }
-                  },
-                  "additionalProperties": false
-                }
+                    },
+                    "required": [
+                      "terminals"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
               }
             },
             {
@@ -112,9 +179,9 @@
                     "description": "Whether to set this terminal as the active one after opening it."
                   },
                   "defaultSelected": {
-                      "type": "boolean",
-                      "description": "If exists on at least one terminal you will be able to choose if which terminals to run and which not, If its true it will be selected by default"
-                    },
+                    "type": "boolean",
+                    "description": "If exists on at least one terminal you will be able to choose if which terminals to run and which not, If its true it will be selected by default"
+                  },
                   "splitTerminals": {
                     "type": "array",
                     "items": {

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Configuration, JsonConfiguration, TerminalWindow } from "./model";
+import { Configuration, JsonConfiguration, Preset, TerminalWindow } from "./model";
 import { TextDecoder } from "text-encoding";
 import * as path from "path";
 
@@ -18,6 +18,7 @@ export async function getConfiguration(): Promise<Configuration> {
 
   const terminalWindows:
     | TerminalWindow[]
+    | { [key: string]: TerminalWindow[] | Preset }
     | undefined = vscode.workspace
     .getConfiguration("restoreTerminals")
     .get("terminals");

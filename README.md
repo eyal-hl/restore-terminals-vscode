@@ -1,127 +1,191 @@
-# Forked from https://github.com/EthanSK/restore-terminals-vscode
-
-Added features:
-
-- Allows to have multiple presets of terminals
-- Allows to prompt for checkbox to run only spesific terminals
-- Allows to set active window [credit to Gharsnull](https://github.com/Gharsnull/restore-terminals-vscode/tree/feature/select-active-window)
-
 # Restore Terminals
 
-Automatically spawn integrated terminal windows and split terminals, and run any shell commands when VSCode starts up!
+Automatically open terminal windows, split them, and run commands when VS Code starts.
 
-## How to use
+## Features
 
-Simply configure your VSCode settings JSON file to look something like this:
+- 🚀 Auto-restore terminals on VS Code startup
+- 📑 Split terminals in any configuration
+- 🎯 Multiple presets to choose from
+- ☑️ Optional checkbox prompt to select which terminals to open
+- 🔄 Smart terminal replacement (no duplicates)
 
+---
+
+## Quick Start
+
+Add this to your VS Code `settings.json`:
+
+```json
+"restoreTerminals.terminals": [
+  {
+    "splitTerminals": [
+      { "name": "server", "commands": ["npm run dev"] },
+      { "name": "client", "commands": ["npm run client"] }
+    ]
+  }
+]
 ```
- "restoreTerminals.terminals": [
+
+This creates one terminal window with two split panes: "server" and "client".
+
+---
+
+## Configuration Examples
+
+### Basic: Single Terminal
+
+```json
+"restoreTerminals.terminals": [
+  {
+    "splitTerminals": [
+      { "name": "dev", "commands": ["npm run dev"] }
+    ]
+  }
+]
+```
+
+### Multiple Terminal Windows with Splits
+
+```json
+"restoreTerminals.terminals": [
+  {
+    "splitTerminals": [
+      { "name": "server", "commands": ["npm run dev"] },
+      { "name": "client", "commands": ["npm run client"] }
+    ]
+  },
+  {
+    "splitTerminals": [
+      { "name": "tests", "commands": ["npm test -- --watch"] }
+    ]
+  }
+]
+```
+
+This creates:
+
+- **Window 1**: "server" | "client" (split)
+- **Window 2**: "tests"
+
+### Presets: Switch Between Configurations
+
+Use an object instead of an array to define named presets. You'll be prompted to choose one when restoring:
+
+```json
+"restoreTerminals.terminals": {
+  "dev": [
     {
-      "setAsActive": true,
-      "defaultSelected": true,
       "splitTerminals": [
-        {
-          "name": "server",
-          "commands": ["npm i", "npm run dev"]
-        },
-        {
-          "name": "client",
-          "commands": ["npm run dev:client"]
-        },
-        {
-          "name": "test",
-          "commands": ["jest --watch"]
-        }
+        { "name": "server", "commands": ["npm run dev"] },
+        { "name": "logs", "commands": ["npm run logs"] }
       ]
-    },
+    }
+  ],
+  "test": [
     {
       "splitTerminals": [
-        {
-          "name": "build & e2e",
-          "commands": ["npm run eslint", "npm run build", "npm run e2e"],
-          "shouldRunCommands": false
-        },
-        {
-          "name": "worker",
-          "commands": ["npm-run-all --parallel redis tsc-watch-start worker"]
-        }
+        { "name": "test", "commands": ["npm test"] }
       ]
     }
   ]
+}
 ```
 
-Or named configurations that you can choose between:
+### Presets with Per-Preset Settings
 
-```
- "restoreTerminals.terminals": {
-    "dev": [
-      {
-        "setAsActive": true,
-        "splitTerminals": [
-          {
-            "name": "server",
-            "commands": ["npm i", "npm run dev"]
-          },
-          {
-            "name": "client",
-            "commands": ["npm run dev:client"]
-          }
-        ]
-      },
+Wrap your terminals in an object to add preset-specific settings like `keepExistingTerminalsOpen`:
+
+```json
+"restoreTerminals.terminals": {
+  "dev": {
+    "keepExistingTerminalsOpen": false,
+    "terminals": [
       {
         "splitTerminals": [
-          {
-            "name": "worker",
-            "commands": ["npm-run-all --parallel redis tsc-watch-start worker"]
-          }
+          { "name": "server", "commands": ["npm run dev"] }
         ]
       }
-    ],
-    "test": [
+    ]
+  },
+  "add-logs": {
+    "keepExistingTerminalsOpen": true,
+    "terminals": [
       {
         "splitTerminals": [
-          {
-            "name": "test",
-            "commands": ["jest --watch"],
-            "shouldRunCommands": false
-          }
-        ],
-      },
-      {
-        "splitTerminals": [
-          {
-            "name": "build & e2e",
-            "commands": ["npm run eslint", "npm run build", "npm run e2e"],
-            "shouldRunCommands": false
-          }
-        ],
+          { "name": "logs", "commands": ["npm run logs"] }
+        ]
       }
     ]
   }
+}
 ```
 
-The outer array represents a integrated VSCode terminal window, and the `splitTerminals` array contains the information about how each terminal window should be split up.
+### Checkbox Selection
 
-You can also use a custom config file under. The file should be at `.vscode/restore-terminals.json` in any workspace you want. A sample config file is [here](https://github.com/EthanSK/restore-terminals-vscode/blob/master/sample-test-project/.vscode/restore-terminals.json). If this config file is present, Restore Terminals will try and load settings from it first, then use `settings.json` as a fallback.
+Add `defaultSelected` to any terminal to enable a checkbox prompt, letting you choose which terminals to open:
 
-## Extra info
+```json
+"restoreTerminals.terminals": [
+  {
+    "defaultSelected": true,
+    "splitTerminals": [
+      { "name": "server", "commands": ["npm run dev"] }
+    ]
+  },
+  {
+    "defaultSelected": false,
+    "splitTerminals": [
+      { "name": "e2e", "commands": ["npm run e2e"] }
+    ]
+  }
+]
+```
 
-The order of split terminals from left to right is the order in the array.
+---
 
-You can manually trigger the restoration of terminals by running `Restore Terminals` in the command palette.
+## Settings Reference
 
-If you find the extension glitching out, try increasing the `restoreTerminals.artificialDelayMilliseconds` setting to a higher number, such as `1000`.
+| Setting                                        | Type            | Default | Description                                      |
+| ---------------------------------------------- | --------------- | ------- | ------------------------------------------------ |
+| `restoreTerminals.terminals`                   | array \| object | —       | Terminal configuration (see examples above)      |
+| `restoreTerminals.runOnStartup`                | boolean         | `true`  | Restore terminals when VS Code starts            |
+| `restoreTerminals.keepExistingTerminalsOpen`   | boolean         | `false` | Keep existing terminals open when restoring      |
+| `restoreTerminals.artificialDelayMilliseconds` | number          | `150`   | Delay between operations (increase if glitching) |
 
-If you do not want this extension to close the currently open terminal windows, you can simply set `restoreTerminals.keepExistingTerminalsOpen` to `true`.
+### Terminal Options
 
-If you do not want it to restore terminals on VSCode startup, but instead only run when you trigger it manually from the command palette, then set `restoreTerminals.runOnStartup` to `false`.
+| Property            | Type     | Description                                                           |
+| ------------------- | -------- | --------------------------------------------------------------------- |
+| `name`              | string   | Terminal display name                                                 |
+| `commands`          | string[] | Commands to run on open                                               |
+| `shouldRunCommands` | boolean  | If `false`, paste commands without running (default: `true`)          |
+| `setAsActive`       | boolean  | Make this the focused terminal after restore                          |
+| `defaultSelected`   | boolean  | Pre-select in checkbox prompt (enables prompt if set on any terminal) |
 
-If you don't want the commands to actually run, just be pasted in the terminal, then set `shouldRunCommands` to `false` in each `splitTerminals` object.
+---
 
-If you don't like using split terminals, then just provide one object in each split terminal array, which should be the intuitive thing to do.
+## How `keepExistingTerminalsOpen` Works
 
-### Contributions
+| Value             | Behavior                                                             |
+| ----------------- | -------------------------------------------------------------------- |
+| `false` (default) | Close **all** existing terminals, then create new ones               |
+| `true`            | Only close terminals with the **same name** as new ones, keep others |
 
-Unless you can 100% prove your contribution fully works with a video, and the code is clean and makes sense, I am no longer accepting contributions. Too many contributions have been submitted that don't work, and the VSCode official API doesn't work in many cases, and this extension already uses a couple hacks to get around it.
+This prevents duplicate terminals while preserving unrelated ones.
 
-**Enjoy!**
+---
+
+## Tips
+
+- **Manual trigger**: Run `Restore Terminals` from the Command Palette
+- **Custom config file**: Create `.vscode/restore-terminals.json` in your workspace (takes priority over settings.json)
+- **Glitching?**: Increase `artificialDelayMilliseconds` to `500` or `1000`
+- **No splits?**: Just put one item in the `splitTerminals` array
+
+---
+
+## Credits
+
+- Original extension: [EthanSK](https://github.com/EthanSK/restore-terminals-vscode)
+- Active window feature: [Gharsnull](https://github.com/Gharsnull/restore-terminals-vscode/tree/feature/select-active-window)
